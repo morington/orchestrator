@@ -1,0 +1,19 @@
+{
+  "pipeline_version": "1.0",
+  "definition_key": "support.routing",
+  "idempotency_key": "start:ticket_778",
+  "outputs": {
+    "resolution": {"ref": "$4:result", "required": false, "default": "auto"}
+  },
+  "steps": [
+    {
+      "step_id": 1,
+      "meta": {"target": "service.classify"},
+      "data": {"ticket": "778"},
+      "filters": [{"filter_id": 1, "condition": "$priority == 'low'", "then": "goto", "targets": [4]}]
+    },
+    {"step_id": 2, "meta": {"target": "service.triage"}, "depends_on": [1], "data": {}},
+    {"step_id": 3, "meta": {"target": "service.assign"}, "depends_on": [2], "data": {}},
+    {"step_id": 4, "meta": {"target": "service.autoclose"}, "depends_on": [3], "data": {}}
+  ]
+}

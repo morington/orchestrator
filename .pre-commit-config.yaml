@@ -1,0 +1,36 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.7
+    hooks:
+      - id: ruff-check
+        types_or: [python, pyi]
+        args: ["--fix"]
+        stages: [pre-commit]
+
+      - id: ruff-format
+        types_or: [python, pyi]
+        stages: [pre-commit]
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        stages: [pre-commit]
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.6
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml", "-r", "src"]
+        additional_dependencies: ["bandit[toml]"]
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      - id: units
+        name: Run unit tests
+        entry: uv run pytest tests/units
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

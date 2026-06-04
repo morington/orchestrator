@@ -1,0 +1,34 @@
+{
+  "pipeline_version": "1.0",
+  "definition_key": "order.fulfillment",
+  "business_ref": "order-12345",
+  "idempotency_key": "start:cmd_9f2a1",
+  "outputs": {
+    "text": {"ref": "$2:result.text", "required": true},
+    "notify_status": {"ref": "$3:status", "required": false, "default": "skipped"}
+  },
+  "steps": [
+    {
+      "step_id": 1,
+      "meta": {"target": "service.fetch", "transport_mode": "async_result_subject"},
+      "data": {"order_id": "order-12345"}
+    },
+    {
+      "step_id": 2,
+      "meta": {
+        "target": "service.translate",
+        "retry_policy": {"max_attempts": 3, "backoff_sec": [1, 5, 15]},
+        "on_failure": "fail",
+        "valid_for_sec": 300
+      },
+      "depends_on": [{"node": 1, "policy": "requires_success"}],
+      "data": {"text": "$1:result.text"}
+    },
+    {
+      "step_id": 3,
+      "meta": {"target": "service.notify", "transport_mode": "fire_and_forget", "on_failure": "abandon"},
+      "depends_on": [{"node": 2, "policy": "requires_closed"}],
+      "data": {"message": "$2:result.text"}
+    }
+  ]
+}

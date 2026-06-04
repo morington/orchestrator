@@ -1,0 +1,18 @@
+FROM python:3.13-slim
+
+RUN apt-get -qq update \
+    && apt-get -qq install -y --no-install-recommends build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir --root-user-action=ignore uv
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --no-dev --frozen --no-install-project
+
+ENTRYPOINT ["uv", "run", "--no-sync", "alembic"]
+CMD ["upgrade", "head"]

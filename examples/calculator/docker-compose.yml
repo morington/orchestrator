@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: calc-postgres
+    environment:
+      POSTGRES_USER: orchestrator
+      POSTGRES_PASSWORD: orchestrator
+      POSTGRES_DB: orchestrator
+    networks:
+      - calc
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orchestrator -d orchestrator"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: calc-nats
+    command: ["-js"]
+    ports:
+      - "4222:4222"
+    networks:
+      - calc
+
+  migration:
+    build:
+      context: ../..
+      dockerfile: dockerfiles/Dockerfile.migration
+    image: orchestrator-migration:1.0.0
+    container_name: calc-migration
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../../alembic/:/app/alembic/
+      - ../../alembic.ini:/app/alembic.ini
+      - ../../src/:/app/src/
+    env_file:
+      - ../../.env
+    networks:
+      - calc
+    restart: "no"
+
+  orchestrator:
+    build:
+      context: ../..
+      dockerfile: dockerfiles/Dockerfile.orchestrator
+    image: orchestrator:1.0.0
+    container_name: calc-orchestrator
+    env_file:
+      - ../../.env
+    networks:
+      - calc
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      migration:
+        condition: service_completed_successfully
+    restart: always
+
+  calculator:
+    image: orchestrator:1.0.0
+    container_name: calc-calculator
+    command: ["uv", "run", "python", "examples/calculator/services/calculator.py"]
+    environment:
+      NATS_URL: nats://nats:4222
+    networks:
+      - calc
+    depends_on:
+      nats:
+        condition: service_started
+    restart: always
+
+  assembler:
+    image: orchestrator:1.0.0
+    container_name: calc-assembler
+    command: ["uv", "run", "python", "examples/calculator/services/assembler.py"]
+    environment:
+      NATS_URL: nats://nats:4222
+    networks:
+      - calc
+    depends_on:
+      nats:
+        condition: service_started
+    restart: always
+
+networks:
+  calc:
+    driver: bridge

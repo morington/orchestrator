@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/morington/orchestrator/schemas/step-result-1.0.schema.json",
+  "title": "Step result 1.0",
+  "description": "Wire message a service publishes to orchestrator.results.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["message_version", "definition_key", "run_id", "node_key", "step_run_id", "attempt"],
+  "properties": {
+    "message_version": {"type": "string", "const": "1.0"},
+    "definition_key": {"type": "string"},
+    "run_id": {"type": "string"},
+    "node_key": {"type": "string"},
+    "step_run_id": {"type": "string"},
+    "attempt": {"type": "integer", "minimum": 1},
+    "result": {"type": ["object", "null"]},
+    "error": {
+      "type": ["object", "null"],
+      "properties": {
+        "failure_class": {"enum": ["business", "transient", "dispatch_failed"]},
+        "message": {"type": "string"}
+      }
+    }
+  }
+}

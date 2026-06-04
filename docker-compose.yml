@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: orchestrator-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-orchestrator}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orchestrator}
+      POSTGRES_DB: ${POSTGRES_DB:-orchestrator}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - orchestrator_pgdata:/var/lib/postgresql/data
+    networks:
+      - orchestrator
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-orchestrator} -d ${POSTGRES_DB:-orchestrator}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: always
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: orchestrator-nats
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - orchestrator
+    restart: always
+
+  migration:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.migration
+    image: orchestrator-migration:1.0.0
+    container_name: orchestrator-migration
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./alembic/:/app/alembic/
+      - ./alembic.ini:/app/alembic.ini
+      - ./src/:/app/src/
+    env_file:
+      - .env
+    networks:
+      - orchestrator
+    command: ["upgrade", "head"]
+    restart: "no"
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.orchestrator
+    image: orchestrator:1.0.0
+    container_name: orchestrator
+    env_file:
+      - .env
+    networks:
+      - orchestrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      migration:
+        condition: service_completed_successfully
+    restart: always
+
+volumes:
+  orchestrator_pgdata:
+
+networks:
+  orchestrator:
+    driver: bridge
