@@ -62,6 +62,7 @@ services:
       - .env
     networks:
       - orchestrator
+      - oopsys
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,3 +78,6 @@ volumes:
 networks:
   orchestrator:
     driver: bridge
+  oopsys:
+    external: true
+    name: oopsys-net
