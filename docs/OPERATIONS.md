@@ -79,6 +79,19 @@ make migrate-local  # локально: uv run alembic upgrade head (POSTGRESQL_
 Новая ревизия: `uv run alembic revision --autogenerate -m "<описание>"`, затем правка и
 `upgrade head`. DSN собирается из `POSTGRESQL__*` (см. `alembic/env.py`).
 
+Контейнер `postgres` в `docker-compose.yml` инициализируется теми же `POSTGRESQL__*`
+(маппинг в `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`). Миграции и оркестратор
+должны видеть один и тот же пароль.
+
+Если миграция падает с `InvalidPasswordError`, а volume PostgreSQL уже создан ранее с
+другим паролем, смена `.env` не поможет — пароль в data volume задаётся только при первом
+запуске. Варианты:
+
+1. Привести пароль в БД к значению из `.env` (если знаете текущий):
+   `docker compose exec postgres psql -U orchestrator -d orchestrator -c "ALTER USER orchestrator PASSWORD '...';"`
+2. Пересоздать volume (удалит данные):
+   `docker compose down -v && docker compose up -d --build`
+
 ## DLQ
 
 Poison-сообщения (битый JSON, неизвестная версия, неизвестный `run_id`/узел) уходят в
