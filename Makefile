@@ -35,7 +35,7 @@ down: ## Остановить инфраструктуру
 migrate: ## Применить миграции через контейнер migration
 	docker compose up --build migration
 
-migrate-local: ## Применить миграции локально (STORAGE__URL на localhost)
+migrate-local: ## Применить миграции локально (POSTGRESQL__HOST=localhost в .env)
 	uv run alembic upgrade head
 
 run: ## Запустить оркестратор локально

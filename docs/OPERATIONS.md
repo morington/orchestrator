@@ -73,11 +73,11 @@ healthy-PostgreSQL, выполняет `upgrade head` и завершается;
 
 ```bash
 make migrate        # через контейнер (docker compose up --build migration)
-make migrate-local  # локально: uv run alembic upgrade head (STORAGE__URL на localhost)
+make migrate-local  # локально: uv run alembic upgrade head (POSTGRESQL__HOST=localhost)
 ```
 
 Новая ревизия: `uv run alembic revision --autogenerate -m "<описание>"`, затем правка и
-`upgrade head`. URL подключения берётся из `STORAGE__URL` (см. `alembic/env.py`).
+`upgrade head`. DSN собирается из `POSTGRESQL__*` (см. `alembic/env.py`).
 
 ## DLQ
 

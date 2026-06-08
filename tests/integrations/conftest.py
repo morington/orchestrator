@@ -3,13 +3,11 @@ import os
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from orchestrator.app.configuration.config import Configuration
 from orchestrator.app.infrastructure.db.base import Base
 from orchestrator.app.infrastructure.store_sql import SqlAlchemyWorkflowStore
 
-PG_URL = os.getenv(
-    "TEST_PG_URL",
-    os.getenv("STORAGE__URL", "postgresql+asyncpg://orchestrator:orchestrator@localhost:5432/orchestrator"),
-)
+PG_URL = os.getenv("TEST_PG_URL", Configuration().postgresql.url())
 
 
 @pytest.fixture

@@ -42,7 +42,7 @@ class StoreProvider(Provider):
         if configuration.storage.is_memory:
             yield None
             return
-        engine = create_async_engine(configuration.storage.url, pool_pre_ping=True)
+        engine = create_async_engine(configuration.storage_url, pool_pre_ping=True)
         if configuration.storage.is_sqlite:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
@@ -87,7 +87,11 @@ class ServiceProvider(Provider):
 
     @provide
     def outbox_publisher(
-        self, store: WorkflowStore, publisher: MessagePublisher, runtime: WorkflowRuntime, configuration: Configuration,
+        self,
+        store: WorkflowStore,
+        publisher: MessagePublisher,
+        runtime: WorkflowRuntime,
+        configuration: Configuration,
     ) -> OutboxPublisher:
         engine = configuration.engine
         return OutboxPublisher(
@@ -102,7 +106,10 @@ class ServiceProvider(Provider):
 
     @provide
     def timeout_watcher(
-        self, store: WorkflowStore, runtime: WorkflowRuntime, configuration: Configuration,
+        self,
+        store: WorkflowStore,
+        runtime: WorkflowRuntime,
+        configuration: Configuration,
     ) -> TimeoutWatcher:
         engine = configuration.engine
         return TimeoutWatcher(store, runtime, batch=engine.scheduler_batch, poll_sec=engine.timeout_poll_sec)
@@ -113,6 +120,9 @@ class ServiceProvider(Provider):
 
     @provide
     def recovery(
-        self, store: WorkflowStore, outbox_publisher: OutboxPublisher, timeout_watcher: TimeoutWatcher,
+        self,
+        store: WorkflowStore,
+        outbox_publisher: OutboxPublisher,
+        timeout_watcher: TimeoutWatcher,
     ) -> RecoveryOnStartup:
         return RecoveryOnStartup(store, outbox_publisher, timeout_watcher)

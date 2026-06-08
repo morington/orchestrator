@@ -123,7 +123,7 @@ flowchart LR
 ## Конфигурация `.env`
 
 Все секции — nested с разделителем `__` (см. [`.env.example`](.env.example)):
-`DEV`, `STORAGE__*`, `NATS__*`, `SUBJECTS__*`, `ENGINE__*`, `RETENTION__*`,
+`DEV`, `STORAGE__*`, `POSTGRESQL__*`, `NATS__*`, `SUBJECTS__*`, `ENGINE__*`, `RETENTION__*`,
 `OOPSYS_AGENT__*`.
 
 ## Быстрый старт

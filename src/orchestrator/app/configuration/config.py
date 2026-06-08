@@ -7,14 +7,28 @@ from orchestrator.app.configuration.loggers import Loggers
 logger = getLogger(Loggers.development.name)
 
 
+class PostgresqlModel(BaseModel):
+    """Параметры подключения к PostgreSQL."""
+
+    host: str = Field(default="localhost")
+    port: int = Field(default=5432, ge=1, le=65535)
+    username: str = Field(default="orchestrator")
+    password: str = Field(default="orchestrator")
+    database: str = Field(default="orchestrator")
+    driver: str = Field(default="postgresql+asyncpg")
+
+    def url(self) -> str:
+        return f"{self.driver}://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}"
+
+    def safe_url(self) -> str:
+        return f"{self.driver}://***:***@{self.host}:{self.port}/{self.database}"
+
+
 class StorageModel(BaseModel):
     """Конфигурация хранилища состояния (порт WorkflowStore)."""
 
     backend: str = Field(default="postgresql", description="postgresql | sqlite | memory")
-    url: str = Field(
-        default="postgresql+asyncpg://orchestrator:orchestrator@localhost:5432/orchestrator",
-        description="SQLAlchemy async DSN для SQL-семейства",
-    )
+    sqlite_path: str = Field(default=":memory:", description="Путь SQLite или :memory:")
     payload_inline_max: int = Field(default=262144, ge=1, description="Порог inline payload, байт")
 
     @property
@@ -88,6 +102,7 @@ class Configuration(BaseSettings):
     is_development: bool = Field(default=False, alias="DEV")
 
     storage: StorageModel = StorageModel()
+    postgresql: PostgresqlModel = PostgresqlModel()
     nats: NatsModel = NatsModel()
     subjects: SubjectsModel = SubjectsModel()
     engine: EngineModel = EngineModel()
@@ -100,6 +115,15 @@ class Configuration(BaseSettings):
         env_nested_delimiter="__",
         extra="ignore",
     )
+
+    @property
+    def storage_url(self) -> str:
+        """SQLAlchemy async DSN для SQL-бэкендов (postgresql, sqlite)."""
+        if self.storage.is_sqlite:
+            if self.storage.sqlite_path == ":memory:":
+                return "sqlite+aiosqlite:///:memory:"
+            return f"sqlite+aiosqlite:///{self.storage.sqlite_path}"
+        return self.postgresql.url()
 
     @model_validator(mode="after")
     def warn_development(self) -> "Configuration":

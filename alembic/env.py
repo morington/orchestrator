@@ -1,5 +1,4 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -7,6 +6,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from orchestrator.app.configuration.config import Configuration
 from orchestrator.app.infrastructure.db.base import Base
 from orchestrator.app.infrastructure.db import models  # noqa: F401  (регистрация таблиц)
 
@@ -17,9 +17,7 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-_db_url = os.getenv("STORAGE__URL")
-if _db_url:
-    config.set_main_option("sqlalchemy.url", _db_url)
+config.set_main_option("sqlalchemy.url", Configuration().postgresql.url())
 
 
 def run_migrations_offline() -> None:
